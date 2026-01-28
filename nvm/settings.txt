@@ -1,0 +1,2 @@
+root: D:\projects\nvm
+path: C:\nvm4w\nodejs
