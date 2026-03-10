@@ -119,6 +119,7 @@ export const analyticsAPI = {
 // ======================
 
 export const foodAPI = {
+  logFoodQuery: (data) => api.post('/food/analyze', data),
   addMeal: (data) => api.post('/food', data),
   getMealsByDate: (date) => api.get(`/food/date/${date}`),
   getDailyNutritionSummary: (date) => api.get(`/food/summary/daily/${date}`),
@@ -135,10 +136,12 @@ export const foodAPI = {
 // ======================
 
 export const exerciseAPI = {
+  logWorkoutWithAI: (data) => api.post('/exercise/analyze', data),
   addExercise: (data) => api.post('/exercise', data),
   getExercisesByDate: (date) => api.get(`/exercise/date/${date}`),
   getDailyActivitySummary: (date) => api.get(`/exercise/summary/daily/${date}`),
-  getWeeklyActivitySummary: (date) => api.get(`/exercise/summary/weekly/${date}`),
+  getWeeklyActivitySummary: (date) =>
+    date ? api.get(`/exercise/summary/weekly/${date}`) : api.get('/exercise/summary/weekly'),
   getMonthlyOverview: (year, month) => api.get(`/exercise/summary/monthly/${year}/${month}`),
   getRecentExercises: () => api.get('/exercise/recent'),
   getExerciseInsights: () => api.get('/exercise/insights'),
@@ -167,6 +170,37 @@ export const weightGoalAPI = {
   set: (data) => api.post('/weight-goal', data),
 };
 
+// ======================
+// Prescription API
+// ======================
+
+export const prescriptionAPI = {
+  upload: (data) => api.post('/prescriptions/upload', data),
+  getAll: () => api.get('/prescriptions'),
+  getById: (id) => api.get(`/prescriptions/${id}`),
+};
+
+// ======================
+// Medicine & Drug Safety API
+// ======================
+
+export const medicineAPI = {
+  getAll: () => api.get('/medicine'),
+  add: (data) => api.post('/medicine', data),
+};
+
+// ======================
+// Reminders API
+// ======================
+
+export const reminderAPI = {
+  getToday: () => api.get('/reminders/today'),
+  markTaken: (medicineId, time) => api.post('/reminders/markTaken', { medicineId, time }),
+};
+
+// ======================
+// Health Check
+// ======================
 export const healthCheck = () => api.get('/health');
 
 export default api;

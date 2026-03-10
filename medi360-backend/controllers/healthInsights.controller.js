@@ -6,6 +6,8 @@
 const HealthProfile = require('../models/HealthProfile.model');
 const Food = require('../models/Food.model');
 const Exercise = require('../models/Exercise.model');
+const Medicine = require('../models/Medicine.model');
+const { buildUserHealthContext } = require('../services/contextEngine');
 
 /**
  * @desc    Get comprehensive health dashboard
@@ -33,15 +35,15 @@ exports.getHealthDashboard = async (req, res, next) => {
       const gender = healthProfile.gender || 'male';
       const activityLevel = healthProfile.lifestyle?.exerciseFrequency || 'moderate';
       
-      // Basic BMR calculation (Mifflin-St Jeor)
-      const weight = healthProfile.measurements?.weight || 70;
-      const height = healthProfile.measurements?.height || 170;
+      // Basic BMR calculation (Mifflin-St Jeor) using stored height/weight
+      const weightValue = healthProfile.weight?.value || 70;
+      const heightCm = healthProfile.height?.value || 170;
       
       let bmr;
       if (gender === 'male') {
-        bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+        bmr = 10 * weightValue + 6.25 * heightCm - 5 * age + 5;
       } else {
-        bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+        bmr = 10 * weightValue + 6.25 * heightCm - 5 * age - 161;
       }
       
       // Activity multipliers
@@ -50,7 +52,7 @@ exports.getHealthDashboard = async (req, res, next) => {
         light: 1.375,
         moderate: 1.55,
         active: 1.725,
-        'very active': 1.9
+        'very-active': 1.9
       };
       
       const tdee = bmr * (activityMultipliers[activityLevel] || 1.55);
@@ -83,9 +85,9 @@ exports.getHealthDashboard = async (req, res, next) => {
         healthProfile: healthProfile ? {
           age: healthProfile.age,
           gender: healthProfile.gender,
-          bmi: healthProfile.measurements?.bmi,
-          weight: healthProfile.measurements?.weight,
-          height: healthProfile.measurements?.height
+          bmi: healthProfile.bmi,
+          weight: healthProfile.weight,
+          height: healthProfile.height
         } : null,
         nutrition: dailyNutrition,
         activity: dailyActivity,
@@ -151,6 +153,54 @@ exports.getWeeklyHealthSummary = async (req, res, next) => {
  * @access  Private
  */
 exports.getPersonalizedRecommendations = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const context = await buildUserHealthContext(userId);
+    
+    const insights = [];
+
+    // 1. Calorie deficit warning
+    if (context.calorieBalance && context.calorieBalance.netBalance < -500) {
+      insights.push(`You are ${Math.abs(context.calorieBalance.netBalance)} calories below your target. Make sure you're eating enough!`);
+    } else if (context.calorieBalance && context.calorieBalance.netBalance > 500) {
+      insights.push(`You are ${context.calorieBalance.netBalance} calories over your target.`);
+    }
+
+    // 2. Low protein intake
+    if (context.nutritionSummaryToday && context.nutritionSummaryToday.totalProtein < 50) {
+      insights.push("Your protein intake is low today. Consider adding some lean meats, eggs, or beans.");
+    }
+
+    // 3. Insufficient activity
+    if (context.weeklyExerciseSummary && context.weeklyExerciseSummary.weeklyTotals) {
+      const activeMins = context.weeklyExerciseSummary.weeklyTotals.totalActiveMinutes;
+      if (activeMins < 150) {
+        insights.push(`Your weekly activity goal is not met. You have ${activeMins} active minutes so far (Goal: 150).`);
+      } else {
+        insights.push(`Great job! You've met your weekly activity goal with ${activeMins} active minutes.`);
+      }
+    }
+
+    // 4. Medication fatigue
+    if (context.activeMedicines && context.activeMedicines.length > 2) {
+      insights.push("You are taking multiple medications. If you're feeling unusually tired, it could be medication fatigue. Speak to your doctor if symptoms persist.");
+    }
+
+    res.json({
+      success: true,
+      data: { insights }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get legacy health recommendations
+ * @route   GET /api/health-insights/recommendations
+ * @access  Private
+ */
+exports.getLegacyRecommendations = async (req, res, next) => {
   try {
     const userId = req.user.id;
     

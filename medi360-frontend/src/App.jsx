@@ -21,19 +21,14 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import HealthProfile from './pages/HealthProfile';
 import Chat from './pages/Chat';
-import ChatHistory from './pages/ChatHistory';
-import Analytics from './pages/Analytics';
 import FoodTracking from './pages/FoodTracking';
 import ExerciseTracking from './pages/ExerciseTracking';
-import NutritionDashboard from './pages/NutritionDashboard';
-import HealthDashboard from './pages/HealthDashboard';
-import NotFound from './pages/NotFound';
-
-import FoodRecommendations from './pages/FoodRecommendations';
-import ExerciseInsights from './pages/ExerciseInsights';
 import WeightGoalDashboard from './pages/WeightGoalDashboard';
-import NutritionAnalytics from './pages/NutritionAnalytics';
-
+import PrescriptionUpload from './pages/PrescriptionUpload';
+import PrescriptionHistory from './pages/PrescriptionHistory';
+import MedicineReminderDashboard from './pages/MedicineReminderDashboard';
+import OverallAnalysis from './pages/OverallAnalysis';
+import NotFound from './pages/NotFound';
 function App() {
   return (
     <AuthProvider>
@@ -80,6 +75,17 @@ function App() {
           />
           
           <Route
+            path="/overall-analysis"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <OverallAnalysis />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
             path="/health-profile"
             element={
               <PrivateRoute>
@@ -101,27 +107,6 @@ function App() {
             }
           />
           
-          <Route
-            path="/chat-history"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <ChatHistory />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          
-          <Route
-            path="/analytics"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <Analytics />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
 
           <Route
             path="/food-tracking"
@@ -145,49 +130,7 @@ function App() {
             }
           />
 
-          <Route
-            path="/nutrition-dashboard"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <NutritionDashboard />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
 
-          <Route
-            path="/health-dashboard"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <HealthDashboard />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-          
-          <Route
-            path="/food-recommendations"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <FoodRecommendations />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/exercise-insights"
-            element={
-              <PrivateRoute>
-                <Layout>
-                  <ExerciseInsights />
-                </Layout>
-              </PrivateRoute>
-            }
-          />
 
           <Route
             path="/weight-goal"
@@ -201,16 +144,38 @@ function App() {
           />
 
           <Route
-            path="/nutrition-analytics-dashboard"
+            path="/prescription-upload"
             element={
               <PrivateRoute>
                 <Layout>
-                  <NutritionAnalytics />
+                  <PrescriptionUpload />
                 </Layout>
               </PrivateRoute>
             }
           />
-          
+
+          <Route
+            path="/prescriptions"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <PrescriptionHistory />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/reminders"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <MedicineReminderDashboard />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+
           {/* 404 */}
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />

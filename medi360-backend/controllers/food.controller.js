@@ -7,6 +7,54 @@ const Food = require('../models/Food.model');
 const HealthProfile = require('../models/HealthProfile.model');
 const WeightGoal = require('../models/WeightGoal.model');
 const nutritionService = require('../services/nutritionCalculator');
+const aiAnalysisService = require('../services/aiAnalysisService');
+
+/**
+ * @desc    Analyze and Log a meal via AI
+ * @route   POST /api/food/analyze
+ * @access  Private
+ */
+exports.analyzeAndLogFood = async (req, res, next) => {
+  try {
+    const { query } = req.body;
+    
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a food query'
+      });
+    }
+    
+    // Analyze using Gemini
+    const analysis = await aiAnalysisService.analyzeFood(query);
+    
+    // Create the DB record
+    const meal = await Food.create({
+      user: req.user.id,
+      mealType: analysis.mealType || 'snack',
+      foodQuery: analysis.foodQuery || query,
+      foodItems: [{ name: analysis.foodQuery || query, quantity: '1', unit: 'serving' }],
+      nutrition: {
+        calories: analysis.calories || 0,
+        protein: analysis.protein || 0,
+        carbs: analysis.carbs || 0,
+        fats: analysis.fats || 0,
+        fiber: 0,
+        sugar: 0
+      },
+      date: new Date()
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Meal analyzed and logged successfully',
+      data: { meal, analysis }
+    });
+    
+  } catch (error) {
+    next(error);
+  }
+};
 
 /**
  * @desc    Add a meal/food entry
@@ -370,7 +418,7 @@ exports.getFoodRecommendations = async (req, res, next) => {
     const healthProfile = await HealthProfile.findOne({ user: req.user.id });
     const weightGoal = await WeightGoal.findOne({ user: req.user.id });
     
-    // Some basic dummy recommendations
+    // Rule-based food recommendations based on current weight goal and health profile
     const recommendations = [];
 
     let focus = 'balanced';

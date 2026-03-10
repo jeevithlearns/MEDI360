@@ -8,7 +8,8 @@ const router = express.Router();
 const {
   getHealthDashboard,
   getWeeklyHealthSummary,
-  getPersonalizedRecommendations,
+  getPersonalizedRecommendations: getPersonalizedInsights,
+  getLegacyRecommendations,
   getProgressTracking
 } = require('../controllers/healthInsights.controller');
 const { protect } = require('../middleware/auth');
@@ -26,7 +27,11 @@ router.get('/weekly', getWeeklyHealthSummary);
 
 // @route   GET /api/health-insights/recommendations
 // @desc    Get personalized health recommendations based on all data
-router.get('/recommendations', getPersonalizedRecommendations);
+router.get('/recommendations', getLegacyRecommendations);
+
+// @route   GET /api/health-insights/personalized
+// @desc    Get AI recommendation engine insights
+router.get('/personalized', getPersonalizedInsights);
 
 // @route   GET /api/health-insights/progress/:weeks
 // @desc    Get progress tracking over specified weeks (default: 4)

@@ -6,6 +6,7 @@ const express = require('express');
 const router = express.Router();
 const {
   addExercise,
+  analyzeAndLogWorkout,
   getExercisesByDate,
   getDailyActivitySummary,
   getWeeklyActivitySummary,
@@ -24,6 +25,10 @@ router.use(protect);
 // @route   POST /api/exercise
 // @desc    Add a new exercise/workout
 router.post('/', addExercise);
+
+// @route   POST /api/exercise/analyze
+// @desc    Analyze and log a workout using AI
+router.post('/analyze', analyzeAndLogWorkout);
 
 // @route   GET /api/exercise/date/:date
 // @desc    Get exercises by specific date (format: YYYY-MM-DD)

@@ -6,6 +6,73 @@
 const Exercise = require('../models/Exercise.model');
 const HealthProfile = require('../models/HealthProfile.model');
 const exerciseCalculator = require('../services/exerciseCalculator');
+const aiAnalysisService = require('../services/aiAnalysisService');
+
+/**
+ * @desc    Analyze and Log a workout via AI
+ * @route   POST /api/exercise/analyze
+ * @access  Private
+ */
+exports.analyzeAndLogWorkout = async (req, res, next) => {
+  try {
+    const { query } = req.body;
+    
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a workout query'
+      });
+    }
+    
+    // Analyze using Gemini
+    const analysis = await aiAnalysisService.analyzeExercise(query);
+    
+    // Default mapped values
+    const intensityMap = {
+      'low': 'low',
+      'medium': 'moderate',
+      'high': 'high',
+      'very high': 'very high'
+    };
+    const mappedIntensity = intensityMap[analysis.intensity?.toLowerCase()] || 'moderate';
+
+    const exerciseMap = {
+      'running': 'running',
+      'walking': 'walking',
+      'cycling': 'cycling',
+      'weightlifting': 'weightlifting',
+      'swimming': 'swimming',
+      'yoga': 'yoga',
+      'hiit': 'hiit',
+      'cardio': 'cardio',
+      'strength': 'strength',
+      'flexibility': 'flexibility',
+      'sports': 'sports'
+    };
+    const mappedType = exerciseMap[analysis.activityType?.toLowerCase()] || 'other';
+
+    // Create the DB record
+    const exercise = await Exercise.create({
+      user: req.user.id,
+      exerciseQuery: analysis.exerciseQuery || query,
+      exerciseType: mappedType,
+      exerciseName: analysis.exerciseQuery || query,
+      duration: analysis.duration || 30,
+      caloriesBurned: analysis.caloriesBurned || 150,
+      intensity: mappedIntensity,
+      date: new Date()
+    });
+    
+    res.status(201).json({
+      success: true,
+      message: 'Workout analyzed and logged successfully',
+      data: { exercise, analysis }
+    });
+    
+  } catch (error) {
+    next(error);
+  }
+};
 
 /**
  * @desc    Add an exercise/workout

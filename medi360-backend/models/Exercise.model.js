@@ -12,6 +12,10 @@ const exerciseSchema = new mongoose.Schema({
     required: true
   },
   
+  exerciseQuery: {
+    type: String
+  },
+  
   exerciseType: {
     type: String,
     required: true,
@@ -192,6 +196,7 @@ exerciseSchema.statics.getDailyActivitySummary = async function(userId, date) {
     
     summary.exercises.push({
       _id: exercise._id,
+      exerciseQuery: exercise.exerciseQuery,
       exerciseType: exercise.exerciseType,
       exerciseName: exercise.exerciseName,
       duration: exercise.duration,

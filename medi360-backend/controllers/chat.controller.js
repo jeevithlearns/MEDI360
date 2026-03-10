@@ -9,6 +9,7 @@ const HealthProfile = require('../models/HealthProfile.model');
 const Food = require('../models/Food.model');
 const Exercise = require('../models/Exercise.model');
 const WeightGoal = require('../models/WeightGoal.model');
+const { buildUserHealthContext } = require('../services/contextEngine');
 
 // --- 1. Create Session ---
 exports.createSession = async (req, res, next) => {
@@ -52,26 +53,7 @@ exports.sendMessage = async (req, res, next) => {
     if (!session) return res.status(404).json({ success: false, message: 'Session not found' });
     
     await session.addMessage('user', message);
-    const healthProfile = await HealthProfile.findOne({ user: req.user.id });
-    const weightGoal = await WeightGoal.findOne({ user: req.user.id });
-    
-    // Fetch summaries
-    const todayStr = new Date().toISOString().split('T')[0];
-    let foodSummary = null;
-    let exerciseSummary = null;
-    try {
-      foodSummary = await Food.getDailyNutritionSummary(req.user.id, todayStr);
-      exerciseSummary = await Exercise.getWeeklyActivitySummary(req.user.id, todayStr); // Using today as start is fine for simple usage, or a valid start date
-    } catch(err) {
-      console.error("Error fetching summaries for context", err);
-    }
-    
-    const enhancedContext = {
-      healthProfile,
-      foodSummary,
-      exerciseSummary,
-      weightGoal
-    };
+    const enhancedContext = await buildUserHealthContext(req.user.id);
     
     // --- CALL REAL AI (Gemini 2.5) ---
     let aiResponse;
@@ -84,7 +66,7 @@ exports.sendMessage = async (req, res, next) => {
         // Fallback to Gemini 1.5 if 2.5 hiccups
         console.log("Retrying with Gemini 1.5...");
         aiResponse = await callGeminiClean(message, session, enhancedContext, 'gemini-1.5-flash');
-    } catch (backupError) {
+      } catch (backupError) {
         console.log("⚠️ API Failed, switching to Local Backup...");
         aiResponse = generateSmartLocalResponse(message);
       }
@@ -124,7 +106,20 @@ async function callGeminiClean(userMessage, session, enhancedContext, modelName)
   const API_KEY = process.env.GEMINI_API_KEY;
   if (!API_KEY) throw new Error("GEMINI_API_KEY is missing");
   
-  const { healthProfile, foodSummary, exerciseSummary, weightGoal } = enhancedContext;
+  const { 
+    healthProfile, 
+    nutritionSummaryToday, 
+    weeklyExerciseSummary, 
+    weightGoal, 
+    activeMedicines, 
+    prescriptionHistory,
+    calorieBalance,
+    sleepData
+  } = enhancedContext;
+
+  const medsText = activeMedicines && activeMedicines.length > 0 
+    ? activeMedicines.map(m => `- ${m.name} (${m.dosage})`).join('\n')
+    : 'None recorded';
 
   // INSTRUCTION: Do NOT use Markdown (hashes/asterisks)
   const systemPrompt = `You are MEDI-360, a professional Medical AI and Wellness Coach.
@@ -134,27 +129,25 @@ Patient Age: ${healthProfile?.age || 'Unknown'}
 Gender: ${healthProfile?.gender || 'Unknown'}
 Current Weight: ${weightGoal?.currentWeight || 'Unknown'} kg
 Target Weight: ${weightGoal?.targetWeight || 'Unknown'} kg
-Daily Calorie Target: ${weightGoal?.dailyCaloriesTarget || 'Unknown'} kcal
+Sleep: ${sleepData?.estimatedHours || 'Unknown'} hours
+Calorie Balance: ${calorieBalance ? calorieBalance.netBalance : 'Unknown'} kcal
 
 TODAY'S NUTRITION:
-Calories Consumed: ${foodSummary?.totalCalories || 0} kcal
-Protein: ${foodSummary?.totalProtein || 0}g
-Carbs: ${foodSummary?.totalCarbs || 0}g
-Fats: ${foodSummary?.totalFats || 0}g
+Calories Consumed: ${nutritionSummaryToday?.totalCalories || 0} kcal
 
-WEEKLY EXERCISE:
-Calories Burned: ${exerciseSummary?.weeklyTotals?.totalCaloriesBurned || 0} kcal
-Active Minutes: ${exerciseSummary?.weeklyTotals?.totalActiveMinutes || 0} mins
+ACTIVE MEDICATIONS:
+${medsText}
 
 INSTRUCTIONS:
-1. Analyze the user's input safely and consider the context.
-2. If the user asks about food, macros, or weight goals, use the context provided to give personalized advice.
-3. Respond in PLAIN TEXT only. 
-4. Do NOT use markdown symbols like #, *, or **.
-5. Use Emojis for sections.
-6. Use "•" for bullet points.
+1. Analyze the user's input safely and consider their extensive medical context (medicines, health, diet).
+2. Use the user's active medicines and health profile to give personalized advice and spot any possible simple correlations (e.g. fatigue could be related to medication or lack of sleep).
+3. Do NOT prescribe new drugs. Always recommend consulting a doctor.
+4. Respond in PLAIN TEXT only. 
+5. Do NOT use markdown symbols like #, *, or **.
+6. Use Emojis for sections.
+7. Use "•" for bullet points.
 
-REQUIRED OUTPUT FORMAT (General Health):
+REQUIRED OUTPUT FORMAT (General Health & Medication):
 
 🩺 ANALYSIS
 [Brief explanation here]
@@ -162,6 +155,7 @@ REQUIRED OUTPUT FORMAT (General Health):
 💊 IMMEDIATE ADVICE
 • [Step 1]
 • [Step 2]
+• [Step 3]
 
 ⚠️ WARNING SIGNS
 • [Symptom to watch for]
@@ -180,8 +174,6 @@ REQUIRED OUTPUT FORMAT (Nutrition & Fitness):
 
 ---
 Disclaimer: I am an AI wellness coach, not a certified nutritionist.`;
-
-
 
   // Request Body
   const requestBody = {

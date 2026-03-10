@@ -80,7 +80,6 @@ const UserSchema = new mongoose.Schema({
 
 // UserSchema.index({ createdAt: -1 });
 
-
 // ======================
 // MIDDLEWARE
 // ======================

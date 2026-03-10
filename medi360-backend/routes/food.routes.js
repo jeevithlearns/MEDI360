@@ -6,6 +6,7 @@ const express = require('express');
 const router = express.Router();
 const {
   addMeal,
+  analyzeAndLogFood,
   getMealsByDate,
   getDailyNutritionSummary,
   getWeeklyNutritionSummary,
@@ -23,6 +24,10 @@ router.use(protect);
 // @route   POST /api/food
 // @desc    Add a new meal
 router.post('/', addMeal);
+
+// @route   POST /api/food/analyze
+// @desc    Analyze and log a meal using AI
+router.post('/analyze', analyzeAndLogFood);
 
 // @route   GET /api/food/date/:date
 // @desc    Get meals by specific date (format: YYYY-MM-DD)

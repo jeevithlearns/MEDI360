@@ -18,13 +18,16 @@ require('dotenv').config();
 // Import Routes
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
-const chatRoutes = require('./routes/chat.routes');
-const healthProfileRoutes = require('./routes/healthProfile.routes');
-const analyticsRoutes = require('./routes/analytics.routes');
 const foodRoutes = require('./routes/food.routes');
 const exerciseRoutes = require('./routes/exercise.routes');
 const healthInsightsRoutes = require('./routes/healthInsights.routes');
+const healthProfileRoutes = require('./routes/healthProfile.routes');
 const weightGoalRoutes = require('./routes/weightGoal.routes');
+const prescriptionRoutes = require('./routes/prescription.routes');
+const medicineRoutes = require('./routes/medicine.routes');
+const reminderRoutes = require('./routes/reminder.routes');
+const chatRoutes = require('./routes/chat.routes');
+const { initReminderEngine } = require('./services/reminderEngine');
 
 // Import Error Handler
 const errorHandler = require('./middleware/errorHandler');
@@ -55,7 +58,6 @@ if (process.env.NODE_ENV === 'development') {
 } else {
   app.use(morgan('combined'));
 }
-
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -103,13 +105,15 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/health-profile', healthProfileRoutes);
-app.use('/api/analytics', analyticsRoutes);
 app.use('/api/food', foodRoutes);
 app.use('/api/exercise', exerciseRoutes);
 app.use('/api/health-insights', healthInsightsRoutes);
+app.use('/api/health-profile', healthProfileRoutes);
 app.use('/api/weight-goal', weightGoalRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
+app.use('/api/medicine', medicineRoutes);
+app.use('/api/reminders', reminderRoutes);
+app.use('/api/chat', chatRoutes);
 
 // 404 Handler
 app.use('*', (req, res) => {
@@ -137,6 +141,9 @@ const server = app.listen(PORT, () => {
   console.log(`🌐 Listening on port ${PORT}`);
   console.log(`📡 API Base: http://localhost:${PORT}/api`);
   console.log('=================================');
+
+  // Initialize background services
+  initReminderEngine();
 });
 
 // Graceful Shutdown

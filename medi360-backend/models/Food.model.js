@@ -12,6 +12,10 @@ const foodSchema = new mongoose.Schema({
     required: true
   },
   
+  foodQuery: {
+    type: String
+  },
+  
   mealType: {
     type: String,
     enum: ['breakfast', 'lunch', 'dinner', 'snack'],
@@ -148,6 +152,7 @@ foodSchema.statics.getDailyNutritionSummary = async function(userId, date) {
     summary.meals.push({
       _id: meal._id,
       mealType: meal.mealType,
+      foodQuery: meal.foodQuery,
       foodItems: meal.foodItems,
       nutrition: meal.nutrition,
       time: meal.date,

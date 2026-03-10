@@ -6,334 +6,197 @@
 import React, { useState, useEffect } from 'react';
 import { foodAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { 
-  FaUtensils, 
-  FaPlus, 
-  FaHistory, 
-  FaTrash, 
-  FaSpinner, 
-  FaChevronRight 
-} from 'react-icons/fa';
+import { FaLeaf, FaFire, FaDrumstickBite, FaUtensils, FaDumbbell, FaListOl, FaSpinner } from 'react-icons/fa';
+import { SectionHeader, StatCard, ChartCard } from '../components/UiComponents';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 
 function FoodTracking() {
   const [loading, setLoading] = useState(false);
-  const [recentMeals, setRecentMeals] = useState([]);
-  const [meal, setMeal] = useState({
-    mealType: 'breakfast',
-    foodItems: [{ name: '', quantity: '', unit: '' }],
-    nutrition: {
-      calories: '',
-      protein: '',
-      carbs: '',
-      fats: '',
-    },
-    notes: '',
-    date: format(new Date(), 'yyyy-MM-dd'),
+  // Recent meals and AI query-based logging
+  const [query, setQuery] = useState('');
+  const [summary, setSummary] = useState({
+    totalCalories: 0,
+    totalProtein: 0,
+    totalCarbs: 0,
+    totalFats: 0,
   });
+  const [foods, setFoods] = useState([]);
 
   useEffect(() => {
     fetchRecentMeals();
+    fetchDailySummary();
   }, []);
 
   const fetchRecentMeals = async () => {
     try {
+      setLoading(true);
       const res = await foodAPI.getRecentMeals();
       if (res.success) {
-        setRecentMeals(res.data.meals || []);
+        setFoods(res.data.meals || []);
       }
     } catch (error) {
       console.error('Error fetching recent meals:', error);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (name.startsWith('nutrition.')) {
-      const field = name.split('.')[1];
-      const parsedValue = value === '' ? '' : parseFloat(value);
-      setMeal({
-        ...meal,
-        nutrition: {
-          ...meal.nutrition,
-          [field]: isNaN(parsedValue) && value !== '' ? 0 : parsedValue,
-        },
-      });
-    } else {
-      setMeal({ ...meal, [name]: value });
-    }
-  };
-
-  const handleFoodItemChange = (index, e) => {
-    const { name, value } = e.target;
-    const newFoodItems = [...meal.foodItems];
-    newFoodItems[index][name] = value;
-    setMeal({ ...meal, foodItems: newFoodItems });
-  };
-
-  const addFoodItem = () => {
-    setMeal({
-      ...meal,
-      foodItems: [...meal.foodItems, { name: '', quantity: '', unit: '' }],
-    });
-  };
-
-  const removeFoodItem = (index) => {
-    const newFoodItems = meal.foodItems.filter((_, i) => i !== index);
-    setMeal({ ...meal, foodItems: newFoodItems });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      const res = await foodAPI.addMeal(meal);
-      if (res.success) {
-        toast.success('Meal logged successfully!');
-        setMeal({
-          mealType: 'breakfast',
-          foodItems: [{ name: '', quantity: '', unit: '' }],
-          nutrition: {
-            calories: '',
-            protein: '',
-            carbs: '',
-            fats: '',
-          },
-          notes: '',
-          date: format(new Date(), 'yyyy-MM-dd'),
-        });
-        fetchRecentMeals();
-      }
-    } catch (error) {
-      toast.error(error.message || 'Failed to log meal');
+      toast.error('Failed to fetch recent meals.');
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteMeal = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this meal record?')) return;
+  const fetchDailySummary = async () => {
     try {
-      const res = await foodAPI.deleteMeal(id);
-      if (res.success) {
-        toast.success('Meal deleted');
-        fetchRecentMeals();
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const res = await foodAPI.getDailyNutritionSummary(today);
+      if (res.success && res.data && res.data.summary) {
+        setSummary(res.data.summary);
+      } else if (res.success && res.data && res.data.summary === undefined && res.data.totalCalories !== undefined) {
+        // Fallback to direct summary object shape if controller returns summary at root
+        setSummary(res.data);
       }
     } catch (error) {
-      toast.error('Failed to delete meal');
+      console.error('Error fetching daily summary:', error);
+    }
+  };
+
+  const handleLogFood = async (e) => {
+    e.preventDefault();
+    if (!query.trim()) {
+      toast.error('Please enter what you ate.');
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await foodAPI.logFoodQuery({ query }); // Assuming a new API endpoint for AI analysis
+      if (res.success) {
+        toast.success('Meal logged and analyzed!');
+        setQuery('');
+        fetchRecentMeals(); // Refresh recent meals
+        fetchDailySummary(); // Refresh daily summary
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to log meal.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Food & Nutrition</h1>
-        <p className="text-gray-600">Log your daily meals and track your nutrient intake</p>
-      </div>
+    <div className="space-y-8 pb-12 animate-fade-in">
+      
+      <SectionHeader 
+        title="Food Tracking" 
+        description="Log your meals to monitor nutritional intake and stay aligned with your daily goals."
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Log Meal Form */}
-        <div className="md:col-span-2">
-          <div className="card">
-            <h3 className="card-header flex items-center">
-              <FaUtensils className="mr-2 text-primary-600" />
-              Log Your Meal
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Meal Type</label>
-                  <select
-                    name="mealType"
-                    value={meal.mealType}
-                    onChange={handleInputChange}
-                    className="input"
-                    required
-                  >
-                    <option value="breakfast">Breakfast</option>
-                    <option value="lunch">Lunch</option>
-                    <option value="dinner">Dinner</option>
-                    <option value="snack">Snack</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={meal.date}
-                    onChange={handleInputChange}
-                    className="input"
-                    required
-                  />
-                </div>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left Col: Logging Form */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+             <div className="flex items-center gap-3 mb-6">
+               <div className="bg-orange-100 p-3 rounded-xl text-orange-500"><FaUtensils className="text-xl" /></div>
+               <h3 className="text-xl font-bold text-gray-900">Log a Meal</h3>
+             </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Food Items</label>
-                {meal.foodItems.map((item, index) => (
-                  <div key={index} className="flex gap-2 mb-2 animate-fade-in">
-                    <input
-                      placeholder="Item Name"
-                      name="name"
-                      value={item.name}
-                      onChange={(e) => handleFoodItemChange(index, e)}
-                      className="input flex-1"
-                      required
-                    />
-                    <input
-                      placeholder="Qty"
-                      name="quantity"
-                      value={item.quantity}
-                      onChange={(e) => handleFoodItemChange(index, e)}
-                      className="input w-20"
-                    />
-                    <input
-                      placeholder="Unit"
-                      name="unit"
-                      value={item.unit}
-                      onChange={(e) => handleFoodItemChange(index, e)}
-                      className="input w-20"
-                    />
-                    {meal.foodItems.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeFoodItem(index)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded"
-                      >
-                        <FaTrash />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addFoodItem}
-                  className="text-primary-600 text-sm font-medium flex items-center hover:underline mt-1"
-                >
-                  <FaPlus className="mr-1 text-xs" /> Add Another Item
-                </button>
-              </div>
-
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-inner">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-sm font-bold text-gray-800">Nutrition Details</h4>
-                  <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full font-medium">✨ Leave blank for AI auto-calculation</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-xs text-gray-500 uppercase font-bold">Calories</label>
-                    <input
-                      type="number"
-                      name="nutrition.calories"
-                      value={meal.nutrition.calories}
-                      onChange={handleInputChange}
-                      className="input mt-1"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 uppercase font-bold">Protein (g)</label>
-                    <input
-                      type="number"
-                      name="nutrition.protein"
-                      value={meal.nutrition.protein}
-                      onChange={handleInputChange}
-                      className="input mt-1"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 uppercase font-bold">Carbs (g)</label>
-                    <input
-                      type="number"
-                      name="nutrition.carbs"
-                      value={meal.nutrition.carbs}
-                      onChange={handleInputChange}
-                      className="input mt-1"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 uppercase font-bold">Fats (g)</label>
-                    <input
-                      type="number"
-                      name="nutrition.fats"
-                      value={meal.nutrition.fats}
-                      onChange={handleInputChange}
-                      className="input mt-1"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea
-                  name="notes"
-                  value={meal.notes}
-                  onChange={handleInputChange}
-                  className="input"
-                  rows="2"
-                  placeholder="Any extra details..."
-                ></textarea>
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary w-full py-3 flex items-center justify-center"
-                disabled={loading}
-              >
-                {loading ? <FaSpinner className="animate-spin mr-2" /> : <FaPlus className="mr-2" />}
-                Log Meal
-              </button>
-            </form>
+             <form onSubmit={handleLogFood} className="space-y-4">
+               <div>
+                 <label className="block text-sm font-bold text-gray-700 mb-2">What did you eat?</label>
+                 <textarea 
+                   rows="3"
+                   value={query}
+                   onChange={(e) => setQuery(e.target.value)}
+                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all resize-none"
+                   placeholder="e.g. 2 slices of bread, 1 apple..."
+                   required
+                 />
+                 <p className="text-xs text-gray-500 mt-2 italic">Our AI automatically estimates calories and macros.</p>
+               </div>
+               
+               <button 
+                 type="submit" 
+                 disabled={loading}
+                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-blue-600/20 flex items-center justify-center gap-2"
+               >
+                 {loading ? <FaSpinner className="animate-spin" /> : <FaFire />}
+                 {loading ? 'Analyzing...' : 'Log & Analyze'}
+               </button>
+             </form>
           </div>
         </div>
 
-        {/* Recent History */}
-        <div className="md:col-span-1">
-          <div className="card h-full">
-            <h3 className="card-header flex items-center">
-              <FaHistory className="mr-2 text-primary-600" />
-              Recent Meals
-            </h3>
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-              {Array.isArray(recentMeals) && recentMeals.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FaUtensils className="text-4xl mx-auto mb-2 opacity-20" />
-                  <p>No meals logged yet</p>
-                </div>
-              ) : (
-                recentMeals.map((m) => (
-                  <div key={m._id} className="p-3 bg-gray-50 rounded-lg hover:shadow-md transition-shadow group">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="badge badge-low capitalize">{m.mealType}</span>
-                      <button
-                        onClick={() => deleteMeal(m._id)}
-                        className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <FaTrash className="text-xs" />
-                      </button>
-                    </div>
-                    <div className="font-semibold text-gray-800">
-                      {m.foodItems.map(f => f.name).join(', ')}
-                    </div>
-                    <div className="text-xs text-gray-500 flex justify-between mt-2">
-                      <span>{format(new Date(m.date), 'MMM d, yyyy')}</span>
-                      <span className="font-bold text-primary-600">{m.nutrition.calories} kcal</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            {recentMeals.length > 0 && (
-              <a href="/nutrition-dashboard" className="block text-center mt-4 text-sm font-medium text-primary-600 hover:underline">
-                View Full Dashboard <FaChevronRight className="inline text-[10px]" />
-              </a>
-            )}
+        {/* Right Col: Stats & History */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          <h3 className="flex items-center gap-2 text-xl font-bold text-gray-900 mb-4">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-500">
+              <FaFire className="text-sm" />
+            </span>
+            <span>Today's Nutrition Summary</span>
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard 
+              title="Calories" 
+              value={`${summary.totalCalories} kcal`} 
+              icon={FaFire} 
+              colorClass="bg-orange-500" 
+            />
+            <StatCard 
+              title="Protein" 
+              value={`${summary.totalProtein}g`} 
+              icon={FaDumbbell} 
+              colorClass="bg-blue-500" 
+            />
+            <StatCard 
+              title="Carbs" 
+              value={`${summary.totalCarbs}g`} 
+              icon={FaUtensils} 
+              colorClass="bg-green-500" 
+            />
+            <StatCard 
+              title="Fats" 
+              value={`${summary.totalFats}g`} 
+              icon={FaLeaf} 
+              colorClass="bg-yellow-500" 
+            />
           </div>
+
+          <ChartCard title="Recent Logs">
+            <div className="overflow-x-auto mt-4">
+              <table className="w-full text-left border-separate border-spacing-y-3">
+                <thead>
+                  <tr className="text-gray-400 text-sm font-bold uppercase tracking-wider">
+                     <th className="px-4 pb-2">Food / Query</th>
+                     <th className="px-4 pb-2">Kcal</th>
+                     <th className="px-4 pb-2 hidden sm:table-cell">Protein</th>
+                     <th className="px-4 pb-2 hidden sm:table-cell">Carbs</th>
+                     <th className="px-4 pb-2 hidden sm:table-cell">Fats</th>
+                     <th className="px-4 pb-2">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {foods.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="text-center py-8 text-gray-400 font-medium">No meals logged today.</td>
+                    </tr>
+                  ) : (
+                    foods.map(food => (
+                      <tr key={food._id} className="bg-white shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-xl transition-transform hover:-translate-y-0.5">
+                        <td className="px-4 py-4 rounded-l-xl font-bold text-gray-900 truncate max-w-[150px]">{food.foodQuery}</td>
+                        <td className="px-4 py-4 text-orange-600 font-bold">{food.nutrition?.calories || 0}</td>
+                        <td className="px-4 py-4 hidden sm:table-cell text-gray-600 font-medium">{food.nutrition?.protein || 0}g</td>
+                        <td className="px-4 py-4 hidden sm:table-cell text-gray-600 font-medium">{food.nutrition?.carbs || 0}g</td>
+                        <td className="px-4 py-4 hidden sm:table-cell text-gray-600 font-medium">{food.nutrition?.fats || 0}g</td>
+                        <td className="px-4 py-4 rounded-r-xl text-gray-400 text-sm font-medium">
+                          {new Date(food.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </ChartCard>
+
         </div>
       </div>
     </div>

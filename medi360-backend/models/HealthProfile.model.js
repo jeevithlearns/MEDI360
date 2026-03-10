@@ -177,6 +177,7 @@ const HealthProfileSchema = new mongoose.Schema({
     }
   },
   
+
   lastReviewedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -193,7 +194,6 @@ const HealthProfileSchema = new mongoose.Schema({
 // ======================
 
 // HealthProfileSchema.index({ updatedAt: -1 });
-
 
 // ======================
 // MIDDLEWARE
