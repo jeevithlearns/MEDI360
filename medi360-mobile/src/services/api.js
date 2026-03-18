@@ -9,7 +9,7 @@ import AsyncStorage from './storage';
 
 // ⚠️ CHANGE THIS to your backend server IP address
 // Use your computer's local IP (not localhost) when testing on a physical device
-const API_BASE_URL = 'http://192.168.1.106:5000/api';
+const API_BASE_URL = 'http://10.120.174.162:5000/api';
 
 // Create axios instance
 const api = axios.create({
