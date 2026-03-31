@@ -129,6 +129,16 @@ export const foodAPI = {
   getFoodRecommendations: () => api.get('/food/recommendations'),
   updateMeal: (mealId, data) => api.put(`/food/${mealId}`, data),
   deleteMeal: (mealId) => api.delete(`/food/${mealId}`),
+
+  // AI Food Scanner endpoints
+  analyzeImage: (formData) =>
+    api.post('/food/image-analyze', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    }),
+  analyzeImageBase64: (base64) =>
+    api.post('/food/image-analyze', { image: base64 }, { timeout: 30000 }),
+  saveScanMeal: (data) => api.post('/food/image-save', data),
 };
 
 // ======================

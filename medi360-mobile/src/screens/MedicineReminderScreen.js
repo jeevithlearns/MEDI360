@@ -10,8 +10,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pill, Bell, CheckCircle2, Calendar } from 'lucide-react-native';
-import { reminderAPI } from '../services/api';
 import MedicineCard from '../components/MedicineCard';
+import NotificationService from '../services/NotificationService';
+import { reminderAPI } from '../services/api';
 import { COLORS, RADIUS, SHADOWS, SPACING } from '../theme';
 
 export default function MedicineReminderScreen() {
@@ -22,7 +23,11 @@ export default function MedicineReminderScreen() {
   const fetchReminders = useCallback(async () => {
     try {
       const res = await reminderAPI.getToday();
-      setMedicines(res.data || []);
+      const loadedMedicines = res.data || [];
+      setMedicines(loadedMedicines);
+      
+      // Reschedule or update local push notifications
+      NotificationService.scheduleMedicineReminders(loadedMedicines);
     } catch (e) {
       console.error('Failed to load reminders:', e);
     } finally {

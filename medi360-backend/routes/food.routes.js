@@ -4,6 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const {
   addMeal,
   analyzeAndLogFood,
@@ -16,7 +17,24 @@ const {
   getNutritionInsights,
   getFoodRecommendations
 } = require('../controllers/food.controller');
+const {
+  analyzeFoodImage,
+  saveFoodImageMeal
+} = require('../controllers/foodImage.controller');
 const { protect } = require('../middleware/auth');
+
+// Multer config for in-memory image upload (max 10MB)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  },
+});
 
 // All routes require authentication
 router.use(protect);
@@ -28,6 +46,14 @@ router.post('/', addMeal);
 // @route   POST /api/food/analyze
 // @desc    Analyze and log a meal using AI
 router.post('/analyze', analyzeAndLogFood);
+
+// @route   POST /api/food/image-analyze
+// @desc    Analyze food from an image using AI Vision
+router.post('/image-analyze', upload.single('image'), analyzeFoodImage);
+
+// @route   POST /api/food/image-save
+// @desc    Save analyzed food items from image scan as a meal
+router.post('/image-save', saveFoodImageMeal);
 
 // @route   GET /api/food/date/:date
 // @desc    Get meals by specific date (format: YYYY-MM-DD)

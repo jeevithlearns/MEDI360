@@ -23,7 +23,8 @@ import {
   FaChartArea,
   FaFileMedical,
   FaCapsules,
-  FaInbox
+  FaInbox,
+  FaCamera
 } from 'react-icons/fa';
 
 function Layout({ children }) {
@@ -40,17 +41,42 @@ function Layout({ children }) {
     return location.pathname === path;
   };
 
-  const navItems = [
+  const medicalItems = [
     { path: '/dashboard', icon: FaHome, label: 'Dashboard' },
     { path: '/overall-analysis', icon: FaChartArea, label: 'Overall Analysis' },
     { path: '/chat', icon: FaComments, label: 'AI Health Coach' },
-    { path: '/food-tracking', icon: FaUtensils, label: 'Food & Nutrition' },
-    { path: '/exercise-tracking', icon: FaRunning, label: 'Exercise & Activity' },
-    { path: '/weight-goal', icon: FaWeight, label: 'Weight Goal' },
     { path: '/prescriptions', icon: FaFileMedical, label: 'Medical History' },
     { path: '/reminders', icon: FaCapsules, label: 'Medicine Reminders' },
     { path: '/health-profile', icon: FaUser, label: 'Health Profile' },
   ];
+
+  const wellnessItems = [
+    { path: '/food-tracking', icon: FaCamera, label: 'Food & Nutrition' },
+    { path: '/exercise-tracking', icon: FaRunning, label: 'Exercise & Activity' },
+    { path: '/weight-goal', icon: FaWeight, label: 'Weight Goal' },
+  ];
+
+  const renderNavGroup = (items) => {
+    return items.map((item, idx) => {
+      const Icon = item.icon;
+      const active = isActive(item.path);
+      return (
+        <li key={idx}>
+          <Link
+            to={item.path}
+            className={`flex items-center space-x-3 px-4 py-3.5 rounded-2xl transition-all duration-200 group ${
+              active
+                ? 'bg-blue-600 shadow-md shadow-blue-600/20 text-white font-bold'
+                : 'text-slate-600 font-semibold hover:bg-white hover:shadow-sm hover:text-blue-700'
+            }`}
+          >
+            <Icon className={`text-xl transition-transform duration-300 ${active ? 'text-white' : 'text-slate-400 group-hover:text-blue-600'}`} />
+            <span>{item.label}</span>
+          </Link>
+        </li>
+      );
+    });
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fbff] text-slate-800 font-sans selection:bg-blue-200">
@@ -96,27 +122,11 @@ function Layout({ children }) {
         {/* Sidebar Navigation */}
         <aside className="w-[260px] xl:w-[280px] shrink-0 bg-transparent min-h-[calc(100vh-5rem)] sticky top-20 hidden lg:block overflow-y-auto custom-scrollbar">
           <nav className="p-6 space-y-1.5 list-none">
-            <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Main Menu</p>
-            {navItems.map((item, idx) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
-              
-              return (
-                <li key={idx}>
-                  <Link
-                    to={item.path}
-                    className={`flex items-center space-x-3 px-4 py-3.5 rounded-2xl transition-all duration-200 group ${
-                      active
-                        ? 'bg-blue-600 shadow-md shadow-blue-600/20 text-white font-bold'
-                        : 'text-slate-600 font-semibold hover:bg-white hover:shadow-sm hover:text-blue-700'
-                    }`}
-                  >
-                    <Icon className={`text-xl transition-transform duration-300 ${active ? 'text-white' : 'text-slate-400 group-hover:text-blue-600'}`} />
-                    <span>{item.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
+            <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Core Medical</p>
+            {renderNavGroup(medicalItems)}
+            
+            <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-widest mt-8 mb-4">Wellness & Lifestyle</p>
+            {renderNavGroup(wellnessItems)}
           </nav>
         </aside>
 

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react-native';
 
 import DashboardScreen from '../screens/DashboardScreen';
-import FoodTrackingScreen from '../screens/FoodTrackingScreen';
+import FoodScannerScreen from '../screens/FoodScannerScreen';
 import ExerciseTrackingScreen from '../screens/ExerciseTrackingScreen';
 import WeightGoalScreen from '../screens/WeightGoalScreen';
 import HealthProfileScreen from '../screens/HealthProfileScreen';
@@ -20,7 +20,6 @@ import MedicalChatScreen from '../screens/MedicalChatScreen';
 import MedicalHubScreen from '../screens/MedicalHubScreen';
 import PrescriptionUploadScreen from '../screens/PrescriptionUploadScreen';
 import MedicineReminderScreen from '../screens/MedicineReminderScreen';
-import DrugSafetyScreen from '../screens/DrugSafetyScreen';
 
 import { COLORS, RADIUS } from '../theme';
 
@@ -33,8 +32,10 @@ function DashboardStackNavigator() {
   return (
     <DashStack.Navigator screenOptions={{ headerShown: false }}>
       <DashStack.Screen name="DashboardHome" component={DashboardScreen} />
-      <DashStack.Screen name="WeightGoal" component={WeightGoalScreen} />
       <DashStack.Screen name="HealthProfile" component={HealthProfileScreen} />
+      <DashStack.Screen name="Food" component={FoodScannerScreen} />
+      <DashStack.Screen name="Exercise" component={ExerciseTrackingScreen} />
+      <DashStack.Screen name="WeightGoal" component={WeightGoalScreen} />
     </DashStack.Navigator>
   );
 }
@@ -46,7 +47,6 @@ function MedicalStackNavigator() {
       <MedicalStack.Screen name="MedicalHub" component={MedicalHubScreen} />
       <MedicalStack.Screen name="MedicineReminder" component={MedicineReminderScreen} />
       <MedicalStack.Screen name="PrescriptionUpload" component={PrescriptionUploadScreen} />
-      <MedicalStack.Screen name="DrugSafety" component={DrugSafetyScreen} />
     </MedicalStack.Navigator>
   );
 }
@@ -81,10 +81,6 @@ export default function AppNavigator() {
           switch (route.name) {
             case 'Dashboard':
               return <LayoutDashboard size={iconSize} color={color} />;
-            case 'Food':
-              return <UtensilsCrossed size={iconSize} color={color} />;
-            case 'Exercise':
-              return <Dumbbell size={iconSize} color={color} />;
             case 'MedicalTab':
               return <Stethoscope size={iconSize} color={color} />;
             case 'Chat':
@@ -99,16 +95,6 @@ export default function AppNavigator() {
         name="Dashboard"
         component={DashboardStackNavigator}
         options={{ tabBarLabel: 'Home' }}
-      />
-      <Tab.Screen
-        name="Food"
-        component={FoodTrackingScreen}
-        options={{ tabBarLabel: 'Food' }}
-      />
-      <Tab.Screen
-        name="Exercise"
-        component={ExerciseTrackingScreen}
-        options={{ tabBarLabel: 'Exercise' }}
       />
       <Tab.Screen
         name="MedicalTab"

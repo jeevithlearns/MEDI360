@@ -16,9 +16,9 @@ import {
   CheckCircle, ChevronRight, User as UserIcon,
   Camera, PlusCircle
 } from 'lucide-react-native';
-import { analyticsAPI, reminderAPI, healthInsightsAPI } from '../services/api';
-import api from '../services/api';
 import { useAuth } from '../services/AuthContext';
+import NotificationService from '../services/NotificationService';
+import { analyticsAPI, reminderAPI, healthInsightsAPI } from '../services/api';
 import StatCard from '../components/StatCard';
 import InsightCard from '../components/InsightCard';
 import { COLORS, RADIUS, SHADOWS, SPACING } from '../theme';
@@ -40,14 +40,18 @@ export default function DashboardScreen({ navigation }) {
       const [analyticsRes, remRes, insightsRes, healthDashRes, weeklyRes] = await Promise.all([
         analyticsAPI.getDashboard().catch(() => ({ data: {} })),
         reminderAPI.getToday().catch(() => ({ data: [] })),
-        api.get('/health-insights/personalized').catch(() => ({ data: { insights: [] } })),
+        healthInsightsAPI.getPersonalizedRecommendations().catch(() => ({ data: { insights: [] } })),
         healthInsightsAPI.getDashboard().catch(() => ({ data: null })),
         healthInsightsAPI.getWeeklySummary().catch(() => ({ data: null })),
       ]);
 
       setDashboardData(analyticsRes.data);
-      setTodayReminders(remRes.data || []);
+      const reminders = remRes.data || [];
+      setTodayReminders(reminders);
       setAiInsights(insightsRes.data?.insights || []);
+      
+      // Schedule medicine push notifications whenever data is fetched
+      NotificationService.scheduleMedicineReminders(reminders);
       setHealthDashboard(healthDashRes.data || null);
 
       if (weeklyRes.data?.activity?.dailyData && weeklyRes.data?.nutrition?.dailyData) {
@@ -112,7 +116,7 @@ export default function DashboardScreen({ navigation }) {
       <LinearGradient colors={COLORS.gradientPrimary} style={styles.hero}>
         <View style={styles.topRow}>
           <View style={styles.welcomeInfo}>
-            <Text style={styles.greetingText}>Hello, {user?.name?.split(' ')[0] || 'User'} 👋</Text>
+            <Text style={styles.greetingText}>Hello, {user?.fullName?.split(' ')[0] || 'User'} 👋</Text>
             <Text style={styles.heroTitle}>Your Dashboard</Text>
           </View>
           <TouchableOpacity 
@@ -140,64 +144,27 @@ export default function DashboardScreen({ navigation }) {
       {/* ── Stat Cards ── */}
       <View style={styles.statsRow}>
         <StatCard
-          title="Calories In"
-          value={caloriesToday ? `${caloriesToday}` : '0'}
-          subtitle="kcal today"
-          icon={Flame}
-          iconColor={COLORS.orange}
-          bgColor={COLORS.orangeLight}
-        />
-        <StatCard
-          title="Active Minutes"
-          value={activeMinutes ? `${activeMinutes}` : '0'}
-          subtitle="min today"
-          icon={Footprints}
-          iconColor={COLORS.emerald}
-          bgColor={COLORS.emeraldLight}
-        />
-      </View>
-      <View style={styles.statsRow}>
-        <StatCard
-          title="Active Streak"
+          title="Consultations"
           value={dashboardData?.statistics?.totalConsultations != null
             ? `${dashboardData.statistics.totalConsultations}` : '0'}
-          subtitle="sessions"
+          subtitle="total sessions"
           icon={CalendarDays}
           iconColor={COLORS.blue}
           bgColor={COLORS.blueLight}
         />
         <StatCard
-          title="Weight"
-          value={currentWeight ? `${currentWeight}` : '—'}
-          subtitle={bmi ? `BMI: ${bmi}` : weightUnit}
-          icon={Weight}
-          iconColor={COLORS.purple}
-          bgColor={COLORS.purpleLight}
+          title="Reminders"
+          value={todayReminders.length > 0 ? `${todayReminders.length}` : '0'}
+          subtitle="today"
+          icon={CheckCircle}
+          iconColor={COLORS.emerald}
+          bgColor={COLORS.emeraldLight}
         />
       </View>
 
       {/* ── Quick Actions ── */}
       <Text style={[styles.sectionTitle, { marginLeft: 24, marginTop: 24, marginBottom: 12 }]}>Quick Actions</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.actionsScroll}>
-        <TouchableOpacity
-          style={[styles.actionCard, { backgroundColor: COLORS.orangeLight, borderColor: '#FED7AA' }]}
-          onPress={() => navigation.navigate('Food')}
-        >
-          <View style={styles.actionIcon}>
-            <UtensilsCrossed size={22} color={COLORS.orange} />
-          </View>
-          <Text style={styles.actionLabel}>Log Meal</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionCard, { backgroundColor: COLORS.emeraldLight, borderColor: '#A7F3D0' }]}
-          onPress={() => navigation.navigate('Exercise')}
-        >
-          <View style={styles.actionIcon}>
-            <Dumbbell size={22} color={COLORS.emerald} />
-          </View>
-          <Text style={styles.actionLabel}>Log Workout</Text>
-        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.actionCard, { backgroundColor: COLORS.primaryBg, borderColor: '#C7D2FE' }]}
@@ -220,36 +187,45 @@ export default function DashboardScreen({ navigation }) {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* ── Weekly Activity Chart ── */}
-      {weeklyChart && weeklyChart.labels.length > 0 && (
-        <View style={[styles.chartCard, SHADOWS.md]}>
-          <Text style={styles.sectionTitle}>Weekly Caloric Balance</Text>
-          <LineChart
-            data={{
-              labels: weeklyChart.labels,
-              datasets: [
-                { data: weeklyChart.intake.length ? weeklyChart.intake : [0], color: () => COLORS.orange, strokeWidth: 3 },
-                { data: weeklyChart.burn.length ? weeklyChart.burn : [0], color: () => COLORS.emerald, strokeWidth: 3 },
-              ],
-              legend: ['Intake', 'Burn'],
-            }}
-            width={SCREEN_WIDTH - 64}
-            height={200}
-            chartConfig={{
-              backgroundColor: COLORS.card,
-              backgroundGradientFrom: COLORS.card,
-              backgroundGradientTo: COLORS.card,
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(79, 70, 229, ${opacity})`,
-              labelColor: () => COLORS.textMuted,
-              propsForDots: { r: '4', strokeWidth: '2', stroke: COLORS.primary },
-              propsForBackgroundLines: { stroke: COLORS.borderLight },
-            }}
-            bezier
-            style={styles.chart}
-          />
+      {/* ── Wellness Hub ── */}
+      <View style={[styles.section, SHADOWS.md, { marginTop: SPACING.xl }]}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Wellness & Lifestyle</Text>
         </View>
-      )}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 8 }}>
+          <TouchableOpacity
+            style={[styles.actionCard, { backgroundColor: COLORS.orangeLight, borderColor: '#FED7AA' }]}
+            onPress={() => navigation.navigate('Food')}
+          >
+            <View style={styles.actionIcon}>
+              <UtensilsCrossed size={22} color={COLORS.orange} />
+            </View>
+            <Text style={styles.actionLabel}>Nutrition</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionCard, { backgroundColor: COLORS.emeraldLight, borderColor: '#A7F3D0' }]}
+            onPress={() => navigation.navigate('Exercise')}
+          >
+            <View style={styles.actionIcon}>
+              <Dumbbell size={22} color={COLORS.emerald} />
+            </View>
+            <Text style={styles.actionLabel}>Activity</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionCard, { backgroundColor: COLORS.purpleLight, borderColor: '#E9D5FF' }]}
+            onPress={() => navigation.navigate('WeightGoal')}
+          >
+            <View style={styles.actionIcon}>
+              <Weight size={22} color={COLORS.purple} />
+            </View>
+            <Text style={styles.actionLabel}>Weight</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
+
 
       {/* ── Upcoming Reminder ── */}
       <View style={[styles.section, SHADOWS.md]}>
@@ -302,16 +278,7 @@ export default function DashboardScreen({ navigation }) {
         )}
       </View>
 
-      {/* ── Secondary Links ── */}
       <View style={styles.linksRow}>
-        <TouchableOpacity 
-          style={styles.linkItem}
-          onPress={() => navigation.navigate('WeightGoal')}
-        >
-          <Weight size={18} color={COLORS.primary} />
-          <Text style={styles.linkText}>Goal Settings</Text>
-        </TouchableOpacity>
-        <View style={styles.linkDivider} />
         <TouchableOpacity 
           style={styles.linkItem}
           onPress={() => navigation.navigate('HealthProfile')}

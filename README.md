@@ -19,10 +19,7 @@
 6. [Backend API Reference](#backend-api-reference)
    - [Authentication](#authentication-routes)
    - [Health Profile](#health-profile-routes)
-   - [Food & Nutrition](#food--nutrition-routes)
-   - [Exercise & Activity](#exercise--activity-routes)
    - [Health Insights](#health-insights-routes)
-   - [Weight Goal](#weight-goal-routes)
    - [AI Chat (Medical Assistant)](#ai-chat-routes)
    - [Prescriptions](#prescription-routes)
    - [Medicines & Reminders](#medicine--reminder-routes)
@@ -43,12 +40,9 @@
 
 MEDI-360 is a comprehensive personal health management platform that combines traditional health tracking with cutting-edge AI capabilities. It enables users to:
 
-- Track daily meals and calories with AI-assisted food analysis
-- Log workouts and get exercise recommendations
 - Chat with an AI medical assistant for symptom checking
 - Upload and parse prescriptions using OCR + AI
 - Monitor health metrics through rich analytics dashboards
-- Set and track weight loss / gain goals
 - Receive smart medicine reminders
 - View personalized health insights and ML-driven predictions
 
@@ -65,20 +59,14 @@ The system is built across three sub-projects:
 ## Features
 
 ### 🤖 AI-Powered Capabilities
-- **AI Food Analysis** — Describe a meal in natural language; Gemini AI extracts nutritional data automatically
-- **AI Workout Analysis** — Describe a workout; AI calculates calories burned and logs the activity
 - **Medical AI Chat** — Symptom checker and health Q&A powered by Gemini with severity assessment and emergency detection
 - **Prescription OCR** — Upload a photo of a prescription; AI extracts medicine names, dosages, and schedules
-- **Personalized Recommendations** — AI-generated food and exercise recommendations based on your health profile
+- **Personalized Recommendations** — AI-generated health recommendations based on your health profile
 - **ML Predictions** — Machine-learning driven health predictions and risk scoring
 
 ### 📊 Health Tracking & Analytics
-- **Food Tracking** — Daily meal logging with calories, macros (protein, carbs, fat, fiber)
-- **Exercise Tracking** — Workout logging with MET-based calorie burn calculations
-- **Nutrition Dashboard** — Daily/weekly nutrition summaries and trend charts
-- **Weight Goal Tracking** — Set targets, log progress, view graphical progress
 - **Medical Insights** — AI-generated health insights based on aggregated health data
-- **Overall Analysis** — Cross-domain health report combining nutrition, activity, and health metrics
+- **Overall Analysis** — Comprehensive health report combining various health metrics
 
 ### 🔐 Authentication & Security
 - JWT-based stateless authentication
@@ -159,15 +147,12 @@ MEDI360-main/
 ├── medi360-backend/              # Express REST API
 │   ├── controllers/              # Route handler logic
 │   │   ├── auth.controller.js
-│   │   ├── food.controller.js
-│   │   ├── exercise.controller.js
 │   │   ├── healthProfile.controller.js
 │   │   ├── healthInsights.controller.js
 │   │   ├── chat.controller.js
 │   │   ├── prescription.controller.js
 │   │   ├── medicine.controller.js
 │   │   ├── reminder.controller.js
-│   │   ├── weightGoal.controller.js
 │   │   └── analytics.controller.js
 │   ├── middleware/               # Express middleware
 │   │   ├── auth.js               # JWT protect middleware
@@ -175,20 +160,14 @@ MEDI360-main/
 │   ├── models/                   # Mongoose schemas
 │   │   ├── User.model.js
 │   │   ├── HealthProfile.model.js
-│   │   ├── Food.model.js
-│   │   ├── Exercise.model.js
 │   │   ├── ChatSession.model.js
 │   │   ├── Prescription.model.js
-│   │   ├── Medicine.model.js
-│   │   └── WeightGoal.model.js
+│   │   └── Medicine.model.js
 │   ├── routes/                   # Express routers
 │   │   ├── auth.routes.js
 │   │   ├── user.routes.js
-│   │   ├── food.routes.js
-│   │   ├── exercise.routes.js
 │   │   ├── healthInsights.routes.js
 │   │   ├── healthProfile.routes.js
-│   │   ├── weightGoal.routes.js
 │   │   ├── prescription.routes.js
 │   │   ├── medicine.routes.js
 │   │   ├── reminder.routes.js
@@ -196,13 +175,9 @@ MEDI360-main/
 │   │   └── analytics.routes.js
 │   ├── services/                 # Business logic & AI services
 │   │   ├── medicalAI.service.js  # Core Gemini AI integration
-│   │   ├── aiAnalysisService.js  # Food/exercise AI analysis
 │   │   ├── mlPrediction.service.js # ML health predictions
 │   │   ├── contextEngine.js      # Health context builder
 │   │   ├── geminiContextBuilder.js
-│   │   ├── nutritionCalculator.js
-│   │   ├── exerciseCalculator.js
-│   │   ├── weightPlannerService.js
 │   │   ├── ocrService.js         # Prescription OCR
 │   │   └── reminderEngine.js     # Cron-based reminders
 │   ├── utils/                    # Helper utilities
@@ -215,10 +190,6 @@ MEDI360-main/
 │   │   ├── components/           # Reusable UI components
 │   │   │   ├── Layout.jsx        # App shell (sidebar + nav)
 │   │   │   ├── PrivateRoute.jsx  # Auth guard component
-│   │   │   ├── ActivitySummary.jsx
-│   │   │   ├── NutritionSummary.jsx
-│   │   │   ├── FoodForm.jsx
-│   │   │   ├── ExerciseForm.jsx
 │   │   │   └── UiComponents.jsx
 │   │   ├── context/
 │   │   │   └── AuthContext.jsx   # Global auth state
@@ -423,70 +394,6 @@ Authorization: Bearer <your_jwt_token>
 
 ---
 
-### Food & Nutrition Routes
-**Base:** `/api/food` | 🔒 All routes protected
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/` | Manually add a meal |
-| `POST` | `/analyze` | 🤖 AI-analyze and log a meal |
-| `GET` | `/date/:date` | Get meals for a specific date (YYYY-MM-DD) |
-| `GET` | `/summary/daily/:date` | Get daily nutrition summary |
-| `GET` | `/summary/weekly/:startDate?` | Get weekly nutrition summary |
-| `GET` | `/recent` | Get meals from last 7 days |
-| `GET` | `/insights` | Get AI nutrition insights (30 days) |
-| `GET` | `/recommendations` | Get AI food recommendations |
-| `PUT` | `/:mealId` | Update a meal entry |
-| `DELETE` | `/:mealId` | Delete a meal entry |
-
-**AI Analyze Meal body:**
-```json
-{
-  "description": "I had a bowl of oatmeal with banana and a cup of black coffee for breakfast"
-}
-```
-
-**Manual Add Meal body:**
-```json
-{
-  "name": "Oatmeal with banana",
-  "mealType": "breakfast",
-  "calories": 350,
-  "protein": 10,
-  "carbs": 65,
-  "fat": 6,
-  "fiber": 8
-}
-```
-
----
-
-### Exercise & Activity Routes
-**Base:** `/api/exercise` | 🔒 All routes protected
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/` | Manually log an exercise |
-| `POST` | `/analyze` | 🤖 AI-analyze and log a workout |
-| `GET` | `/date/:date` | Get exercises for a specific date |
-| `GET` | `/summary/daily/:date` | Get daily activity summary |
-| `GET` | `/summary/weekly/:startDate?` | Get weekly activity summary |
-| `GET` | `/summary/monthly/:year/:month` | Get monthly activity overview |
-| `GET` | `/recent` | Get recent exercises (last 7 days) |
-| `GET` | `/insights` | Get AI exercise insights (30 days) |
-| `GET` | `/recommendations` | Get personalized exercise recommendations |
-| `PUT` | `/:exerciseId` | Update an exercise entry |
-| `DELETE` | `/:exerciseId` | Delete an exercise entry |
-
-**AI Analyze Workout body:**
-```json
-{
-  "description": "I jogged for 30 minutes at a moderate pace along the park trail"
-}
-```
-
----
-
 ### Health Insights Routes
 **Base:** `/api/health-insights` | 🔒 All routes protected
 
@@ -497,26 +404,6 @@ Authorization: Bearer <your_jwt_token>
 | `GET` | `/recommendations` | Get overall health recommendations |
 | `GET` | `/personalized` | Get AI recommendation engine insights |
 | `GET` | `/progress/:weeks?` | Get progress over N weeks (default: 4) |
-
----
-
-### Weight Goal Routes
-**Base:** `/api/weight-goal` | 🔒 All routes protected
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/` | Set a weight goal |
-| `GET` | `/` | Get current weight goal and progress |
-
-**Set Weight Goal body:**
-```json
-{
-  "currentWeight": 80,
-  "targetWeight": 72,
-  "targetDate": "2025-12-31",
-  "goalType": "lose"
-}
-```
 
 ---
 
@@ -620,9 +507,6 @@ The web app uses React Router DOM v6. All protected routes are wrapped with `<Pr
 | `/overall-analysis` | `OverallAnalysis` | ✅ | Cross-domain health report |
 | `/health-profile` | `HealthProfile` | ✅ | View/edit health profile |
 | `/chat` | `Chat` | ✅ | AI health assistant chat |
-| `/food-tracking` | `FoodTracking` | ✅ | Log and view meals |
-| `/exercise-tracking` | `ExerciseTracking` | ✅ | Log and view workouts |
-| `/weight-goal` | `WeightGoalDashboard` | ✅ | Set and track weight goals |
 | `/prescription-upload` | `PrescriptionUpload` | ✅ | Upload prescription images |
 | `/prescriptions` | `PrescriptionHistory` | ✅ | View prescription history |
 | `/reminders` | `MedicineReminderDashboard` | ✅ | Manage medicine reminders |
@@ -636,10 +520,6 @@ The web app uses React Router DOM v6. All protected routes are wrapped with `<Pr
 | `PrivateRoute.jsx` | Higher-order component for route protection |
 | `AuthContext.jsx` | Global auth state (login, logout, token management) |
 | `UiComponents.jsx` | Shared UI primitives (buttons, cards, badges) |
-| `FoodForm.jsx` | Meal input form with AI-analyze functionality |
-| `ExerciseForm.jsx` | Workout input form with AI-analyze functionality |
-| `ActivitySummary.jsx` | Daily activity stats summary card |
-| `NutritionSummary.jsx` | Daily nutrition stats summary card |
 
 ---
 
@@ -654,9 +534,6 @@ The React Native mobile app features 12 screens:
 | `DashboardScreen` | Home dashboard with health overview |
 | `HealthProfileScreen` | Health profile management |
 | `MedicalChatScreen` | AI health assistant (Gemini-powered) |
-| `FoodTrackingScreen` | Log meals and view nutrition |
-| `ExerciseTrackingScreen` | Log workouts and activity |
-| `WeightGoalScreen` | Set and track weight goals |
 | `PrescriptionUploadScreen` | Camera upload for prescriptions |
 | `MedicineReminderScreen` | Manage medicine reminders |
 | `MedicalHubScreen` | Medical hub and drug safety info |
@@ -665,7 +542,7 @@ The React Native mobile app features 12 screens:
 ### Mobile Navigation Structure
 - **Auth Stack** — Login → Register (unauthenticated users)
 - **App Navigator** — Tab/stack navigation (authenticated users)
-  - Bottom tab: Dashboard, Food, Exercise, Medical Chat, More
+  - Bottom tab: Dashboard, Medical Chat, More
 
 ---
 
@@ -716,31 +593,6 @@ Request → Express → Rate Limiter → CORS → Auth Middleware (JWT)
 | `allergies` | Array | Known allergies |
 | `medications` | Array | Current medications |
 
-### `Food`
-| Field | Type | Description |
-|---|---|---|
-| `user` | ObjectId | Reference to User |
-| `name` | String | Meal name |
-| `mealType` | String | breakfast/lunch/dinner/snack |
-| `calories` | Number | Total calories |
-| `protein` | Number | Grams of protein |
-| `carbs` | Number | Grams of carbohydrates |
-| `fat` | Number | Grams of fat |
-| `fiber` | Number | Grams of fiber |
-| `date` | Date | Date of meal |
-| `aiGenerated` | Boolean | Whether AI analyzed this |
-
-### `Exercise`
-| Field | Type | Description |
-|---|---|---|
-| `user` | ObjectId | Reference to User |
-| `name` | String | Exercise/activity name |
-| `type` | String | cardio/strength/flexibility/sports |
-| `duration` | Number | Duration in minutes |
-| `caloriesBurned` | Number | Estimated calories burned |
-| `date` | Date | Date of exercise |
-| `aiGenerated` | Boolean | Whether AI analyzed this |
-
 ### `ChatSession`
 | Field | Type | Description |
 |---|---|---|
@@ -766,15 +618,6 @@ Request → Express → Rate Limiter → CORS → Auth Middleware (JWT)
 | `dosage` | String | Dosage instructions |
 | `frequency` | String | How often to take |
 
-### `WeightGoal`
-| Field | Type | Description |
-|---|---|---|
-| `user` | ObjectId | Reference to User |
-| `currentWeight` | Number | Starting weight (kg) |
-| `targetWeight` | Number | Goal weight (kg) |
-| `targetDate` | Date | Target completion date |
-| `goalType` | String | lose / gain / maintain |
-
 ---
 
 ## AI & Services Layer
@@ -786,11 +629,6 @@ Core service wrapping the Google Gemini API. Handles:
 - Emergency detection
 - Health recommendations
 
-### `aiAnalysisService.js`
-AI-powered analysis for food and exercise:
-- Parses natural language food descriptions → nutritional data
-- Parses natural language workout descriptions → exercise data
-
 ### `mlPrediction.service.js`
 Machine learning predictions for:
 - Health risk assessment
@@ -799,15 +637,6 @@ Machine learning predictions for:
 
 ### `contextEngine.js` + `geminiContextBuilder.js`
 Builds rich context from user's health profile and history before making AI calls, ensuring recommendations are personalized and accurate.
-
-### `nutritionCalculator.js`
-Calculates BMR (Basal Metabolic Rate), TDEE (Total Daily Energy Expenditure), and macro targets based on health profile.
-
-### `exerciseCalculator.js`
-MET-based calorie burn calculations for various exercise types.
-
-### `weightPlannerService.js`
-Generates weekly calorie deficit/surplus plans to reach weight goals by `targetDate`.
 
 ### `ocrService.js`
 Processes prescription images using Gemini Vision to extract:

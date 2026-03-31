@@ -45,7 +45,11 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.error('Token verification failed:', error);
-          await logout();
+          // Safe inline clear — avoid calling logout() before state is fully initialized
+          await AsyncStorage.removeItem('token');
+          await AsyncStorage.removeItem('user');
+          setUser(null);
+          setIsAuthenticated(false);
         }
       }
     } catch (error) {

@@ -21,13 +21,13 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import HealthProfile from './pages/HealthProfile';
 import Chat from './pages/Chat';
-import FoodTracking from './pages/FoodTracking';
 import ExerciseTracking from './pages/ExerciseTracking';
 import WeightGoalDashboard from './pages/WeightGoalDashboard';
 import PrescriptionUpload from './pages/PrescriptionUpload';
 import PrescriptionHistory from './pages/PrescriptionHistory';
 import MedicineReminderDashboard from './pages/MedicineReminderDashboard';
 import OverallAnalysis from './pages/OverallAnalysis';
+import FoodImageAnalyzer from './pages/FoodImageAnalyzer';
 import NotFound from './pages/NotFound';
 function App() {
   return (
@@ -113,7 +113,18 @@ function App() {
             element={
               <PrivateRoute>
                 <Layout>
-                  <FoodTracking />
+                  <FoodImageAnalyzer />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/food-scanner"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <FoodImageAnalyzer />
                 </Layout>
               </PrivateRoute>
             }

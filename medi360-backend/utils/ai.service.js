@@ -9,7 +9,7 @@ class AIService {
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY;
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-    this.defaultModel = 'gemini-1.5-flash';
+    this.defaultModel = 'gemini-2.5-flash';
   }
 
   /**

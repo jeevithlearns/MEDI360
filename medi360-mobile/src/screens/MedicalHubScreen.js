@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  Pill, FileText, ShieldAlert,
+  Pill, FileText,
   ChevronRight, Stethoscope
 } from 'lucide-react-native';
 import { COLORS, RADIUS, SHADOWS, SPACING } from '../theme';
@@ -38,16 +38,6 @@ export default function MedicalHubScreen({ navigation }) {
       bgColor: '#ECFDF5',
       screen: 'PrescriptionUpload',
       description: 'Upload your Rx to auto-detect medicines.'
-    },
-    {
-      id: 'safety',
-      title: 'Drug Safety Check',
-      subtitle: 'Interaction Analysis',
-      icon: ShieldAlert,
-      color: COLORS.orange,
-      bgColor: '#FFF7ED',
-      screen: 'DrugSafety',
-      description: 'Check safety against your health profile.'
     },
   ];
 

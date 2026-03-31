@@ -9,7 +9,7 @@ import AsyncStorage from './storage';
 
 // ⚠️ CHANGE THIS to your backend server IP address
 // Use your computer's local IP (not localhost) when testing on a physical device
-const API_BASE_URL = 'http://10.120.174.162:5000/api';
+const API_BASE_URL = 'http://192.168.1.8:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -82,8 +82,6 @@ export const healthProfileAPI = {
   addCondition: (data) => api.post('/health-profile/condition', data),
   addAllergy: (data) => api.post('/health-profile/allergy', data),
   addMedication: (data) => api.post('/health-profile/medication', data),
-  checkMedication: (medicationName) =>
-    api.post('/health-profile/check-medication', { medicationName }),
 };
 
 // ======================
@@ -125,6 +123,16 @@ export const foodAPI = {
   getFoodRecommendations: () => api.get('/food/recommendations'),
   updateMeal: (mealId, data) => api.put(`/food/${mealId}`, data),
   deleteMeal: (mealId) => api.delete(`/food/${mealId}`),
+
+  // AI Food Scanner endpoints
+  analyzeImage: (formData) =>
+    api.post('/food/image-analyze', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    }),
+  analyzeImageBase64: (base64) =>
+    api.post('/food/image-analyze', { image: base64 }, { timeout: 30000 }),
+  saveScanMeal: (data) => api.post('/food/image-save', data),
 };
 
 // ======================
@@ -172,13 +180,7 @@ export const prescriptionAPI = {
   getById: (id) => api.get(`/prescriptions/${id}`),
 };
 
-// ======================
-// Medicine & Drug Safety API
-// ======================
-export const medicineAPI = {
-  getAll: () => api.get('/medicine'),
-  add: (data) => api.post('/medicine', data),
-};
+
 
 // ======================
 // Reminders API

@@ -63,9 +63,9 @@ exports.sendMessage = async (req, res, next) => {
     } catch (error) {
       console.error("Gemini 2.5 Failed:", error.message);
       try {
-        // Fallback to Gemini 1.5 if 2.5 hiccups
-        console.log("Retrying with Gemini 1.5...");
-        aiResponse = await callGeminiClean(message, session, enhancedContext, 'gemini-1.5-flash');
+        // Fallback to Gemini 2.5 Pro if Flash hiccups
+        console.log("Retrying with Gemini 2.5 Pro...");
+        aiResponse = await callGeminiClean(message, session, enhancedContext, 'gemini-2.5-pro');
       } catch (backupError) {
         console.log("⚠️ API Failed, switching to Local Backup...");
         aiResponse = generateSmartLocalResponse(message);

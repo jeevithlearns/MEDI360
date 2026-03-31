@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { analyticsAPI, chatAPI, reminderAPI, healthInsightsAPI } from '../services/api';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -12,6 +13,7 @@ import { StatCard, SectionHeader, ChartCard } from '../components/UiComponents';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 function Dashboard() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
   const [recentSessions, setRecentSessions] = useState([]);
@@ -99,7 +101,7 @@ function Dashboard() {
          <div className="absolute right-0 top-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-20 -mt-20"></div>
          <div className="relative z-10">
            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Health Overview</h1>
-           <p className="text-blue-100 mt-2 text-lg max-w-2xl">Good morning! Here's a snapshot of your wellness journey today.</p>
+           <p className="text-blue-100 mt-2 text-lg max-w-2xl">Good morning, {user?.fullName?.split(' ')[0] || 'there'}! Here's a snapshot of your personalized wellness journey today.</p>
          </div>
          <div className="relative z-10 text-right">
            <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4 border border-white/20">
